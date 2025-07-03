@@ -6,6 +6,8 @@ from torchvision import transforms
 from preprocess import get_loader
 from utils import caption_image
 
+from model import CNN_to_LSTM
+
 def test_specific_images(model_path, image_folder, dataset_path, captions_file, device):
     """
     Very simple script to test specific images using the trained model
@@ -17,12 +19,7 @@ def test_specific_images(model_path, image_folder, dataset_path, captions_file, 
         captions_file: Original captions file path
         device: Device to run inference on
     """
-    # Load the model
-    model = torch.load(model_path)
-    model.eval()
-    model.to(device)
-    
-    # Define image preprocessing (same as training)
+        # Define image preprocessing (same as training)
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -37,6 +34,22 @@ def test_specific_images(model_path, image_folder, dataset_path, captions_file, 
         batch_size=1  # Doesn't matter here
     )
     
+    # Access the vocabulary from the dataset
+    # vocab = dataset.vocab
+    # vocab_size = len(vocab)
+
+    # Instantiate and load model *after* dataset is available
+    model = CNN_to_LSTM(
+        embed_size=256,
+        hidden_size=512,
+        num_layers=2,
+        vocab_size=5240
+    )
+    checkpoint = torch.load(model_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+    model.to(device)
+
     # Access the vocabulary from the dataset
     vocab = dataset.vocab
     
@@ -66,7 +79,7 @@ def test_specific_images(model_path, image_folder, dataset_path, captions_file, 
 
 if __name__ == "__main__":
     # Parameters
-    model_path = "checkpoints/best_model.pt"
+    model_path = "local_checkpoints/model_epoch_36.pt"
     test_image_folder = "test_images"  # Folder with your 4 test images
     dataset_path = "data/images/"  # Original training images path
     captions_file = "data/text.csv"  # Original captions file
