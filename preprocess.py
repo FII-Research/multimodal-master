@@ -17,7 +17,6 @@ from utils import MyCollate
 class Vocabulary:
     def __init__(self, freq_threshold):
         # We need a way to convert from word to index and vice versa 
-        # We start with empty dictionaries and we'll add to it
         self.index_to_word = {0: "<PAD>", 1: "<UNK>", 2: "< SOS >", 3: "<EOS>"}
         self.word_to_index = {"<PAD>": 0, "<UNK>": 1, "< SOS >": 2, "<EOS>": 3}
         self.freq_threshold = freq_threshold 
@@ -52,15 +51,14 @@ class Vocabulary:
 
         Each word corresponds to an indices in the word_to_index dictionary we have built above 
         If a word does not exist then we return it as an Unkown ("UNK") token
-
-        i.e.: My name is John Doe --> []
         '''
         tokenized_text = self.tokenizer(sentence)
         return [
             self.word_to_index[word] if word in self.word_to_index else self.word_to_index["<UNK>"]
             for word in tokenized_text
         ]
-    
+
+
 class FlickrDataset(Dataset):
     def __init__(self, root_dir, caption_file, transforms=None, freq_threshold=2):
         self.root_dir = root_dir 
@@ -92,7 +90,8 @@ class FlickrDataset(Dataset):
         # Image will be a torch tensor because it will be included in our transforms, we need to convert caption
         return img, torch.tensor(numericalized_caption)
 
-def get_loader(root_dir, captions_file, transform, batch_size, shuffle=True, num_workers=8):
+def get_loader(root_dir, captions_file, transform, batch_size, shuffle=False, num_workers=0):
+    
     dataset = FlickrDataset(root_dir, captions_file, transform)
 
     pad_idx = dataset.vocab.word_to_index["<PAD>"]
@@ -100,7 +99,7 @@ def get_loader(root_dir, captions_file, transform, batch_size, shuffle=True, num
     data_loader = DataLoader(
         dataset, 
         batch_size=batch_size,
-        num_workers=4,
+        num_workers=0,
         shuffle=shuffle,
         pin_memory=True, # Advanced Concept: Data placed in "VIP Section" of computer gets fast-track lane to the GPU when training
         collate_fn=MyCollate(pad_idx=pad_idx)
@@ -114,10 +113,10 @@ if __name__ == "__main__":
     )
 
     loader, dataset = get_loader(
-        FlickrDataset, "data/images/", "./data/text.csv", transform=transform, batch_size=16
+        "data/images/", "data/text.csv", transform=transform, batch_size=1
     )
 
-    for idx, (imgs, captions) in enumerate(loader):
+    for imgs, captions in loader:
         print(imgs.shape)
         print(captions.shape)
 
@@ -128,7 +127,8 @@ if __name__ == "__main__":
         print("Caption for the displayed image:")
         for i in range(captions.shape[0]):
             word_idx = captions[i, 0].item()  # Get the index at position i for the first caption (0)
+            print(f"Word Index: {word_idx}")
             # Directly print the word using the vocabulary
-            print(dataset.vocab.index_to_word.get(word_idx, "<UNK>"), end=" ")  
-
+            print(dataset.vocab.index_to_word.get(word_idx, "<UNK>"))  
+        
         input()

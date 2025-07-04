@@ -75,8 +75,6 @@ def train_loop(model, dataloader, loss_fn, optimizer, epochs, device, vocab_size
             
             # Update weights
             optimizer.step()
-            
-            # Update progress 
             epoch_loss += loss.item()
             num_batches += 1
         

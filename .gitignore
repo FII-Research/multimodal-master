@@ -180,4 +180,5 @@ data/
 test_image.png
 checkpoints
 local_checkpoints
+model_repo
 
